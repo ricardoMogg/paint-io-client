@@ -4,8 +4,11 @@ import PaintCanvas from './PaintCanvas';
 import Message from './Message';
 import Panel from './Panel';
 import './app.css';
+
 // TODO 1.1: import socket.io-client
+import io from 'socket.io-client';
 // TODO 1.2: create a new socket connection by invoking "socket.io-client". Convention is to name the returned socket instance "socket".
+const socket = io('http://localhost:3000');
 
 /**
  * Creates a layout panel in a specified position. Other components can use
@@ -41,11 +44,16 @@ let username; // client username
 const paintCanvas = new PaintCanvas({
   mountPoint: document.body,
   onMove({points, color}) {
+    socket.emit('DRAW_POINTS', {points, color});
     // TODO 1.3: emit a "DRAW_POINTS" message to the server when paintCanvas has mouseMove events
   },
 });
 
 // TODO 1.4: listen for draw events from the server of the draw action-type (eg "DRAW_POINTS") and use the paintCanvas.drawLine(Array<{x: number, y: number}>, color: string) method to draw the points on the canvas.
+socket.on('DRAW_POINTS', function (data) {
+  console.log(data);
+  paintCanvas.drawLine(data.points, data.color);
+});
 
 // create and render the color selector
 new ColorSelector({
@@ -68,7 +76,10 @@ setTimeout(() => {
   // next tick
   username = prompt('Enter your username');
   greet.write(`Hello, ${username}.`);
+  socket.emit('LOGIN', {username});
 });
+
+
 // TODO 2.1: Emit a login event (eg "LOGIN") to the server when the client is connected with the selected username.
 // TODO 2.2: Prevent users from using an existing username (multiple ways to do this, the most elegant would be using an "acknowledgement" when you dispatch the login event)
 // TODO 2.3: Listen for an update user list event (eg "UPDATE_USER_LIST") from server, containing the "users" object with all usernames then update the dom to display this.
